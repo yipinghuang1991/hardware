@@ -29,6 +29,13 @@ The Ryzen 5000 series memory controller achieves peak latency when the Infinity 
 *   **Recommended Setting:** **48Ω** (Range: 43.6–60Ω)
 *   **Reasoning:** ProcODT controls signal reflection at the CPU socket. Dual-rank Micron E-die at 3733 MT/s typically requires 48Ω for stable training. Too low (40Ω) causes POST failures; too high (60Ω+) can cause signal ringing and subtle instability. This is often the single most impactful non-timing parameter for 5800X3D dual-rank stability.
 
+**e. CLDO VDDP / VDDG CCD / VDDG IOD (Infinity Fabric Sub-Voltages)**
+*   **Recommended Settings:** **Auto** (reference values below for manual tuning)
+    *   CLDO VDDP: ~0.900V (stabilizes memory module signal strength)
+    *   VDDG CCD: ~0.950V (core-to-I/O die data transfer)
+    *   VDDG IOD: ~0.950V–1.050V (memory controller-to-I/O die transfer)
+*   **Reasoning:** These sub-voltages drive the Infinity Fabric and memory controller signaling. On most ASUS B550 boards, Auto derives them from SoC voltage (VDDG ≈ SoC/2 + offset) and works fine for 1866 MHz FCLK. Manual tuning is only needed if pushing FCLK beyond 1900 MHz or diagnosing elusive WHEA errors. Note: VDDG must not exceed SoC voltage minus ~50mV, or the IMC becomes unstable.
+
 ---
 
 ### Phase 0: Structural & Non-Timing Prerequisites
@@ -52,7 +59,7 @@ These hardware-level parameters must be locked in first. They dictate how physic
 
 **a. DRAM Voltage**
 *   **Recommended Setting:** **1.35V to 1.38V.**
-*   **Reasoning:** Micron E-die suffers from negative voltage scaling. Excess voltage increases physical temperature, which destabilizes tight timings.
+*   **Reasoning:** Micron E-die actually tolerates high voltage well (extreme overclockers routinely push 1.45V+ to tighten tCL). The real constraint is thermal: excess voltage increases DRAM temperature, which directly destabilizes temperature-sensitive timings like tRFC. On dual-rank modules, heat accumulates faster, so 1.35–1.38V is a practical ceiling for sustained daily use — not because E-die is voltage-fragile, but because the resulting heat threatens tRFC stability.
 
 **b. RttNom / RttWr / RttPark (Termination Impedance)**
 *   **Recommended Setting:** **Auto.** (Or specifically `Off / Off / RZQ/5` if Auto fails).
@@ -107,7 +114,16 @@ The core pillars of memory operation. They establish the baseline latency floor.
 ### Phase 2: The Holy Trinity & Bank Cycle
 Governs raw data volume and is the primary source of memory heat.
 
-**1. The Holy Trinity**
+**1. The Cycle Times**
+
+**a. tRC (Bank Cycle Time)**
+*   **Explanation:** Total time required for a memory bank to complete a full open-read-close sequence.
+*   **Values:** Loose: Auto | Stable: 60 | Tight: 56
+*   **Latency/Throughput Value:** Dictates the absolute maximum sustained bandwidth limit of the module.
+*   **Interaction:** Base mathematics dictate $tRC = tRP + tRAS$. Dual-rank configurations strictly require extra clock cycles of padding above this sum: typically $tRC \geq tRP + tRAS + 1\text{-}2$ cycles to account for rank-to-rank switching overhead.
+*   **Voltage/Temp Interaction:** High thermal generator. Increasing this value acts as an immediate thermal relief valve if the Holy Trinity generates too much heat.
+
+**2. The Holy Trinity**
 
 **a. tRRDS (Row Active to Row Active Delay, Short)**
 *   **Explanation:** Mandatory speed limit for activating rows in *different* bank groups.
@@ -129,15 +145,6 @@ Governs raw data volume and is the primary source of memory heat.
 *   **Latency/Throughput Value:** Maximizes CPU efficiency by flooding the Infinity Fabric with continuous data.
 *   **Interaction:** JEDEC mandates $tFAW_{min} = 4 \times tRRDS$. Setting tFAW higher is allowed but yields no performance gain; setting it lower causes immediate instability.
 *   **Voltage/Temp Interaction:** Maximum thermal generator. Forces the controller to relentlessly hammer the RAM.
-
-**2. The Cycle Times**
-
-**a. tRC (Bank Cycle Time)**
-*   **Explanation:** Total time required for a memory bank to complete a full open-read-close sequence.
-*   **Values:** Loose: Auto | Stable: 60 | Tight: 56
-*   **Latency/Throughput Value:** Dictates the absolute maximum sustained bandwidth limit of the module.
-*   **Interaction:** Base mathematics dictate $tRC = tRP + tRAS$. Dual-rank configurations strictly require extra clock cycles of padding above this sum: typically $tRC \geq tRP + tRAS + 1\text{-}2$ cycles to account for rank-to-rank switching overhead.
-*   **Voltage/Temp Interaction:** High thermal generator. Increasing this value acts as an immediate thermal relief valve if the Holy Trinity generates too much heat.
 
 ---
 
@@ -215,7 +222,7 @@ Controls how rapidly the memory controller can switch tasks.
 *   **Explanation:** Cooldown period after finishing a read operation before precharging the bank.
 *   **Values:** Loose: Auto | Stable: 8 | Tight: 6
 *   **Latency/Throughput Value:** Modest reduction in read/precharge cycling delays.
-*   **Interaction:** Must equal precisely half of `tWR`.
+*   **Interaction:** Closely related to `tWR`. The guideline $tRTP \approx tWR / 2$ is a useful starting point, but it is not an architectural hard-link — the IMC can accept other ratios if signal integrity allows.
 *   **Voltage/Temp Interaction:** Minimal thermal generation.
 
 **3. Write-to-Read Turnarounds**
@@ -257,51 +264,51 @@ Crucial for 2x16GB setups. These govern the physical delays when signals travel 
 
 **1. Same Chip (SC)**
 
-**a. tRDRDSC (Read to Read, Same Chip)**
-*   **Explanation:** Delay when read operations stay on the exact same physical memory module chip.
-*   **Values:** **1**
-*   **Latency/Throughput Value:** Practically instant throughput execution.
-*   **Interaction:** Baseline internal chip timing.
-*   **Voltage/Temp Interaction:** Zero impact.
-
-**b. tWRWRSC (Write to Write, Same Chip)**
+**1. tWRWRSC (Write to Write, Same Chip)**
 *   **Explanation:** Delay when write operations stay on the exact same physical chip.
 *   **Values:** **1**
 *   **Latency/Throughput Value:** Practically instant throughput execution.
 *   **Interaction:** Matches the read variant.
 *   **Voltage/Temp Interaction:** Zero impact.
 
+**b. tRDRDSC (Read to Read, Same Chip)**
+*   **Explanation:** Delay when read operations stay on the exact same physical memory module chip.
+*   **Values:** **1**
+*   **Latency/Throughput Value:** Practically instant throughput execution.
+*   **Interaction:** Baseline internal chip timing.
+*   **Voltage/Temp Interaction:** Zero impact.
+
 **2. Same DIMM, Different Rank (SD)**
 
-**a. tRDRDSD (Read to Read, Same DIMM, Different Rank)**
-*   **Explanation:** Delay when the controller stops reading from the chips on the front of the stick and switches to the chips on the back of the exact same stick.
-*   **Values:** Loose: Auto (6-7) | Stable: 5 | Tight: 4
-*   **Latency/Throughput Value:** Major impact on dual-rank interleaving bandwidth.
-*   **Interaction:** If set too tight (e.g., 1), signals physically crash into each other on the PCB causing instant lockups.
-*   **Voltage/Temp Interaction:** Requires strong signal integrity.
-
-**b. tWRWRSD (Write to Write, Same DIMM, Different Rank)**
+**a. tWRWRSD (Write to Write, Same DIMM, Different Rank)**
 *   **Explanation:** Delay when switching write operations from the front to the back of the exact same stick.
 *   **Values:** Loose: Auto | Stable: 5 | Tight: 4
 *   **Latency/Throughput Value:** Optimizes write interleaving across dual-rank memory.
 *   **Interaction:** Matches the read variant closely.
 *   **Voltage/Temp Interaction:** Requires strong signal integrity.
 
+**b. tRDRDSD (Read to Read, Same DIMM, Different Rank)**
+*   **Explanation:** Delay when the controller stops reading from the chips on the front of the stick and switches to the chips on the back of the exact same stick.
+*   **Values:** Loose: Auto (6-7) | Stable: 5 | Tight: 4
+*   **Latency/Throughput Value:** Major impact on dual-rank interleaving bandwidth.
+*   **Interaction:** If set too tight (e.g., 1), signals physically crash into each other on the PCB causing instant lockups.
+*   **Voltage/Temp Interaction:** Requires strong signal integrity.
+
 **3. Different DIMM (DD)**
 
-**a. tRDRDDD (Read to Read, Different DIMM)**
-*   **Explanation:** Delay when switching read operations from the stick in RAM Slot A2 to the stick in RAM Slot B2.
-*   **Values:** Loose: Auto | Stable: 5 | Tight: 4
-*   **Latency/Throughput Value:** Optimizes cross-channel interleaving.
-*   **Interaction:** In a 2-stick setup, this timing generally just needs to parallel your "SD" timing.
-*   **Voltage/Temp Interaction:** Negligible thermal impact.
-
-**b. tWRWRDD (Write to Write, Different DIMM)**
+**a. tWRWRDD (Write to Write, Different DIMM)**
 *   **Explanation:** Delay when switching write operations from Slot A2 to Slot B2.
 *   **Values:** Loose: Auto | Stable: 5 | Tight: 4
 *   **Latency/Throughput Value:** Optimizes cross-channel write throughput.
 *   **Interaction:** Parallels the read variant.
 *   **Voltage/Temp Interaction:** Negligible.
+
+**b. tRDRDDD (Read to Read, Different DIMM)**
+*   **Explanation:** Delay when switching read operations from the stick in RAM Slot A2 to the stick in RAM Slot B2.
+*   **Values:** Loose: Auto | Stable: 5 | Tight: 4
+*   **Latency/Throughput Value:** Optimizes cross-channel interleaving.
+*   **Interaction:** In a 2-stick setup, this timing generally just needs to parallel your "SD" timing.
+*   **Voltage/Temp Interaction:** Negligible thermal impact.
 
 ---
 
@@ -327,7 +334,14 @@ These timings manage ultra-specific states or legacy compatibilities that have l
 ---
 
 ### Validation Protocol
-After applying all timings, stability must be verified in a specific order. Each test catches different failure modes — skipping any step risks intermittent crashes that are difficult to diagnose later.
+
+**Staged Tuning Methodology:** Do not apply all 30+ timings at once. If the system fails, you cannot isolate which parameter caused it. Follow this staged approach:
+
+1.  **Stage 1 — FCLK & Primary:** Set frequency (3733 MT/s), FCLK (1866), UCLK (1:1), SoC voltage, ProcODT, and the primary 5-tuple only. Boot into OS and check `dmesg`/`journalctl` for WHEA errors. Run mprime Small FFTs for 30 minutes to confirm FCLK stability.
+2.  **Stage 2 — Secondaries & Tertiaries:** Once Stage 1 passes, apply secondary timings (tRRDS/L, tFAW, tRC, tWTR_S/L, tWR, tRTP, tCWL, SCLs). Run mprime Large FFTs for 1 hour.
+3.  **Stage 3 — Aggressive Tightening:** Apply tight tRFC, tRRDL=4, and tight SCLs. Run the full validation protocol below.
+
+After applying timings at each stage, stability must be verified in a specific order. Each test catches different failure modes — skipping any step risks intermittent crashes that are difficult to diagnose later.
 
 **Step 1: Boot & Initial Training**
 *   **Action:** Boot into BIOS, apply all settings, cold boot.
@@ -344,10 +358,11 @@ After applying all timings, stability must be verified in a specific order. Each
 *   **Pass Criteria:** No miscompare errors, exit code 0.
 *   **Catches:** Memory cell-level corruption, data line signal integrity, rank-to-rank switching failures (SD/DD timings).
 
-**Step 4: TestMem5 (1usmus v3 config) — 3 Cycles**
-*   **Action:** Run TM5 with the 1usmus_v3 preset for 3 full cycles.
+**Step 4: TestMem5 (Anta777 Extreme1 or Absolut config) — 3 Cycles**
+*   **Action:** Run TM5 with the **Anta777 Extreme1** or **Anta777 Absolut** preset for 3 full cycles.
+*   **Environment Note:** TM5 is a Windows-only application. On an Arch Linux system, run it from a Windows PE USB drive or a dual-boot Windows partition. Running TM5 via WINE is not recommended — the translation layer prevents accurate physical memory mapping, defeating TM5's low-level diagnostic purpose. If Windows is unavailable, substitute with `y-cruncher` (stresses IMC and FCLK heavily) or `memtester` (native Linux, though less aggressive on timing interactions).
 *   **Pass Criteria:** Zero errors across all 3 cycles.
-*   **Catches:** Subtle timing interaction bugs that mprime and stressapptest miss. 1usmus v3 is specifically tuned for Ryzen memory controller edge cases.
+*   **Catches:** Subtle timing interaction bugs that mprime and stressapptest miss. Anta777 configs are specifically tuned for heat-soaking dual-rank memory under sustained load, and are more effective at catching high-temperature bit-flips than the older 1usmus_v3 preset.
 
 **Step 5: dmesg Monitoring (Continuous)**
 *   **Action:** After each test, check `journalctl -k --grep=mce` for machine check exceptions.
