@@ -173,8 +173,8 @@ The core pillars of memory operation. They establish the baseline latency floor.
 *   **Explanation:** Minimum duration a row must stay open to fully complete its operation before closing.
 *   **Values:** Loose: 38 | Stable: 36 | Tight: 36
 *   **Latency/Throughput Value:** Bandwidth consistency. Squeezing too tight terminates operations prematurely, destroying throughput.
-*   **Interaction:** JEDEC defines the minimum as $tRAS_{min} \approx tRCDRd + tRP$. For 3733 MT/s with tRCDRd=19 and tRP=14, this yields $tRAS_{min} \approx 33$, so 36 provides a safe margin above the floor.
-*   **Voltage/Temp Interaction:** Negligible thermal generation. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 7 (tRAS = tRCDRD + tRTP) and step 8 (tRC = tRP + tRAS).
+*   **Interaction:** JEDEC defines the architectural minimum as $tRAS_{min} \approx tRCDRd + tRP$. For 3733 MT/s with tRCDRd=19 and tRP=14, this yields $tRAS_{min} \approx 33$, so 36 provides a safe margin above the floor. Note: the [[DDR4 OC Guide#Tightening Timings|DDR4 OC Guide: Tightening Timings]] step 7 uses an alternative extreme-tuning heuristic ($tRAS = tRCD_{RD} + tRTP$) for aggressive overwrite paths — this is a tightening guideline, not the JEDEC architectural floor.
+*   **Voltage/Temp Interaction:** Negligible thermal generation. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 8 (tRC = tRP + tRAS).
 
 ---
 
@@ -270,7 +270,7 @@ Tuned independently after cycle times are verified thermally stable. **Tune last
 *   **Explanation:** Secondary refresh interval profile, originally designed for high-temperature states.
 *   **Values:** **Auto** (BIOS trained; guideline: ≤ 0.7 × tRFC)
 *   **Latency/Throughput Value:** None.
-*   **Interaction:** BIOS trained reference value.
+*   **Interaction:** BIOS trained reference value. On AMD Zen 3 platforms, the memory controller effectively ignores user-set tRFC2/tRFC4 values — these are auto-trained by BIOS during POST and do not impact core stability or performance tuning. Focus debugging effort on tRFC instead.
 *   **Voltage/Temp Interaction:** N/A.
 
 #### tRFC4 (Refresh Cycle Time 4)
