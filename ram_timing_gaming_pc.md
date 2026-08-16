@@ -25,31 +25,31 @@
 | Base Timing | tRCDRd   | RAS to CAS Delay - Read                        | Manual |    19 |                |         |
 | Base Timing | tRCDWr   | RAS to CAS Delay - Write                       | Manual |     8 |                |         |
 | Base Timing | tRP      | Row Precharge                                  | Manual |    12 |                |         |
-| Base Timing | tRAS     | Active to Precharge Delay (Row Address Strobe) | Manual |    36 | [[ram_tuning#tRAS (Active to Precharge Delay)|≥ tRCDRd + tRP]] |         |
+| Base Timing | tRAS     | Active to Precharge Delay (Row Address Strobe) | Manual |    36 | [[ram_tuning#tRAS (Active to Precharge Delay)\|≥ tRCDRd + tRP]] |         |
 
 ## Secondary Timings
 
 | Group               | Variable | Name                                  | A / M  | Value | Formula           | Comment                    |
 |:------------------- |:-------- |:------------------------------------- |:------ | -----:|:----------------- |:-------------------------- |
-| Write Latency       | tCWL     | CAS Write Latency                     | Manual |    14 | [[ram_tuning#tCWL (CAS Write Latency)|≤ tCL]] |                            |
+| Write Latency       | tCWL     | CAS Write Latency                     | Manual |    14 | [[ram_tuning#tCWL (CAS Write Latency)\|≤ tCL]] |                            |
 | Holy Trinity        | tRRDS    | Row Active to Row Active Delay, Short | Manual |     4 |                   |                            |
 | Holy Trinity        | tRRDL    | Row Active to Row Active Delay, Long  | Manual |     4 |                   |                            |
-| Holy Trinity        | tFAW     | Four Activate Window                  | Manual |    16 | [[ram_tuning#tFAW (Four Activate Window)|= 4 * tRRDS]] |                            |
-| Bank Cycle Times    | tRC      | Row Cycle Time                        | Manual |    58 | [[ram_tuning#tRC (Row Cycle Time)|≥ tRP + tRAS]] | 56 unstable                |
+| Holy Trinity        | tFAW     | Four Activate Window                  | Manual |    16 | [[ram_tuning#tFAW (Four Activate Window)\|= 4 * tRRDS]] |                            |
+| Bank Cycle Times    | tRC      | Row Cycle Time                        | Manual |    58 | [[ram_tuning#tRC (Row Cycle Time)\|≥ tRP + tRAS]] | 56 unstable                |
 | Recovery Delay      | tWR      | Write Recovery Time                   | Manual |    12 |                   |                            |
-| Recovery Delay      | tRTP     | Read to Precharge                     | Manual |     6 | [[ram_tuning#tRTP (Read to Precharge)|≤ tWR / 2]] |                            |
+| Recovery Delay      | tRTP     | Read to Precharge                     | Manual |     6 | [[ram_tuning#tRTP (Read to Precharge)\|≤ tWR / 2]] |                            |
 | Wr-to-Rd Turnaround | tWTRS    | Write to Read Delay, Short            | Manual |     4 |                   |                            |
 | Wr-to-Rd Turnaround | tWTRL    | Write to Read Delay, Long             | Manual |     8 |                   |                            |
-| Refresh Cycle Time  | tRFC     | Refresh Cycle Time                    | Manual |   560 | [[ram_tuning#tRFC (Refresh Cycle Time)|=(ns)*(MT/s)/2000]] | Tune last (temp sensitive) |
-| Refresh Cycle Time  | tRFC2    | Refresh Cycle Time 2                  | Auto   |   486 | [[ram_tuning#tRFC2 (Refresh Cycle Time 2)|≤ 0.7 * tRFC]] | BIOS trained               |
-| Refresh Cycle Time  | tRFC4    | Refresh Cycle Time 4                  | Auto   |   299 | [[ram_tuning#tRFC4 (Refresh Cycle Time 4)|≤ 0.5 * tRFC2]] | BIOS trained               |
+| Refresh Cycle Time  | tRFC     | Refresh Cycle Time                    | Manual |   560 | [[ram_tuning#tRFC (Refresh Cycle Time)\|=(ns)*(MT/s)/2000]] | Tune last (temp sensitive) |
+| Refresh Cycle Time  | tRFC2    | Refresh Cycle Time 2                  | Auto   |   486 | [[ram_tuning#tRFC2 (Refresh Cycle Time 2)\|≤ 0.7 * tRFC]] | BIOS trained               |
+| Refresh Cycle Time  | tRFC4    | Refresh Cycle Time 4                  | Auto   |   299 | [[ram_tuning#tRFC4 (Refresh Cycle Time 4)\|≤ 0.5 * tRFC2]] | BIOS trained               |
 
 ## Tertiary Timings
 
 | Group                 | Variable | Name                                            |  A / M | Value | Formula    | Comment    |
 |:--------------------- |:-------- |:----------------------------------------------- | ------:|:----- |:---------- |:---------- |
-| Same Bank Group Delay | tRdRdSCL | Read to Read Delay, Same Chip, Long             | Manual | 4     | [[ram_tuning#tRDRDSCL (Read to Read, Same Bank Group, Long)|= tWRWRSCL]] |            |
-| Same Bank Group Delay | tWrWrSCL | Write to Write Delay, Same Chip, Long           | Manual | 4     | [[ram_tuning#tWRWRSCL (Write to Write, Same Bank Group, Long)|= tRDRDSCL]] |            |
+| Same Bank Group Delay | tRdRdSCL | Read to Read Delay, Same Chip, Long             | Manual | 4     | [[ram_tuning#tRDRDSCL (Read to Read, Same Bank Group, Long)\|= tWRWRSCL]] |            |
+| Same Bank Group Delay | tWrWrSCL | Write to Write Delay, Same Chip, Long           | Manual | 4     | [[ram_tuning#tWRWRSCL (Write to Write, Same Bank Group, Long)\|= tRDRDSCL]] |            |
 | Raw Turnaround        | tRdWr    | Read to Write Delay                             |   Auto | 18    |            |            |
 | Raw Turnaround        | tWrRd    | Write to Read Delay                             |   Auto | 7     |            |            |
 | Same Chip Delay       | tRdRdSC  | Read to Read Delay, Same Chip                   |   Auto | 1     |            |            |
