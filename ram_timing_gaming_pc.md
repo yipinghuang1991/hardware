@@ -4,9 +4,9 @@
 |:--------------- |:------------ |:----------------------------- |:------ | -----:|:-------------------------------- |
 | Core Voltages   | DRAM Voltage | DRAM Module Voltage           | Manual | 1.35V | When 1.38v, tWrWrSD can be set 4 |
 | Core Voltages   | SoC Voltage  | System on Chip Voltage        | Manual | 1.10V |                                  |
-| Fabric Voltages | CLDO VDDP    | Memory Module Signal Strength | Auto   |       |                                  |
-| Fabric Voltages | VDDG CCD     | Core-to-I/O Die Transfer      | Auto   |       |                                  |
-| Fabric Voltages | VDDG IOD     | MC-to-I/O Die Transfer        | Auto   |       |                                  |
+| Fabric Voltages | VDDG CCD     | Core-to-I/O Die Transfer      | Manual | 0.95v |                                  |
+| Fabric Voltages | VDDG IOD     | MC-to-I/O Die Transfer        | Manual | 0.95v |                                  |
+| Fabric Voltages | CLDO VDDP    | Memory Module Signal Strength | Manual | 0.90v |                                  |
 
 ## Core Signal Control
 
