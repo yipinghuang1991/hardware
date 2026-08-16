@@ -2,8 +2,75 @@
 
 ## References
 
-- [DDR4 OC Guide](./reference/DDR4%20OC%20Guide.md) — integralfx/MemTestHelper — [source](https://github.com/integralfx/MemTestHelper/blob/oc-guide/DDR4%20OC%20Guide.md)
-- [Infinity Fabric Overclocking on Zen2/3](./reference/Infinity%20Fabric%20Overclocking%20on%20Zen2_3.md) — /u/RonLazer — [source](https://docs.google.com/document/d/1FsUuYtjztbqgOiR3uUCtzlTyzB2WRFUm-kXbboECj2s/edit?tab=t.0)
+- [[DDR4 OC Guide|DDR4 OC Guide]] — integralfx/MemTestHelper — [source](https://github.com/integralfx/MemTestHelper/blob/oc-guide/DDR4%20OC%20Guide.md)
+- [[Infinity Fabric Overclocking on Zen2_3|Infinity Fabric Overclocking on Zen2/3]] — /u/RonLazer — [source](https://docs.google.com/document/d/1FsUuYtjztbqgOiR3uUCtzlTyzB2WRFUm-kXbboECj2s/edit?tab=t.0)
+
+## Table of Contents
+
+- [[#System Architecture & Environment]]
+- [[#Voltages]]
+    - [[#DRAM Voltage]]
+    - [[#SoC Voltage (VDDCR_SOC)]]
+    - [[#CLDO VDDP / VDDG CCD / VDDG IOD (Infinity Fabric Sub-Voltages)]]
+- [[#Core Signal Control]]
+    - [[#Infinity Fabric & Memory Controller (Pre-Foundation)]]
+        - [[#FCLK (Infinity Fabric Frequency)]]
+        - [[#UCLK (Memory Controller Frequency)]]
+        - [[#ProcODT (Processor On-Die Termination)]]
+    - [[#Structural & Non-Timing Prerequisites]]
+        - [[#Gear Down Mode (GDM)]]
+        - [[#Power Down Enable (PDE)]]
+        - [[#Command Rate (Cmd2T)]]
+- [[#Primary Timings]]
+    - [[#tCL (CAS Latency)]]
+    - [[#tRCDRd (RAS to CAS Delay - Read)]]
+    - [[#tRCDWr (RAS to CAS Delay - Write)]]
+    - [[#tRP (Row Precharge)]]
+    - [[#tRAS (Active to Precharge Delay)]]
+- [[#Secondary Timings]]
+    - [[#Write Latency]]
+        - [[#tCWL (CAS Write Latency)]]
+    - [[#Holy Trinity]]
+        - [[#tRRDS (Row Active to Row Active Delay, Short)]]
+        - [[#tRRDL (Row Active to Row Active Delay, Long)]]
+        - [[#tFAW (Four Activate Window)]]
+    - [[#Bank Cycle Times]]
+        - [[#tRC (Row Cycle Time)]]
+    - [[#Recovery Delay]]
+        - [[#tWR (Write Recovery Time)]]
+        - [[#tRTP (Read to Precharge)]]
+    - [[#Wr-to-Rd Turnaround]]
+        - [[#tWTRS (Write to Read Delay, Short)]]
+        - [[#tWTRL (Write to Read Delay, Long)]]
+    - [[#Refresh Cycle Time]]
+        - [[#tRFC (Refresh Cycle Time)]]
+        - [[#tRFC2 (Refresh Cycle Time 2)]]
+        - [[#tRFC4 (Refresh Cycle Time 4)]]
+- [[#Tertiary Timings]]
+    - [[#Same Bank Group Delay (SCLs)]]
+        - [[#tRDRDSCL (Read to Read, Same Bank Group, Long)]]
+        - [[#tWRWRSCL (Write to Write, Same Bank Group, Long)]]
+    - [[#Raw Turnaround]]
+        - [[#tRdWr (Read to Write Delay)]]
+        - [[#tWrRd (Write to Read Delay)]]
+    - [[#Same Chip Delay (SC)]]
+        - [[#tRdRdSC (Read to Read, Same Chip)]]
+        - [[#tWrWrSC (Write to Write, Same Chip)]]
+    - [[#Same DIMM Delay (SD)]]
+        - [[#tRdRdSD (Read to Read, Same DIMM, Different Rank)]]
+        - [[#tWrWrSD (Write to Write, Same DIMM, Different Rank)]]
+    - [[#Diff DIMM Delay (DD)]]
+        - [[#tRdRdDD (Read to Read, Different DIMM)]]
+        - [[#tWrWrDD (Write to Write, Different DIMM)]]
+- [[#Signal Integrity & Drive Strength]]
+    - [[#Misc Signal]]
+        - [[#tCKE (Clock Enable)]]
+        - [[#tTRCPAGE (Target Row Cycle Page)]]
+    - [[#Termination Impedance]]
+    - [[#Setup Times]]
+    - [[#Drive Strength]]
+    - [[#Misc]]
+- [[#Validation Protocol]]
 
 ---
 
@@ -23,18 +90,18 @@
 
 ### DRAM Voltage
 *   **Recommended Setting:** **1.35V to 1.38V.**
-*   **Reasoning:** Micron E-die actually tolerates high voltage well (extreme overclockers routinely push 1.45V+ to tighten tCL). The real constraint is thermal: excess voltage increases DRAM temperature, which directly destabilizes temperature-sensitive timings like tRFC. On dual-rank modules, heat accumulates faster, so 1.35–1.38V is a practical ceiling for sustained daily use — not because E-die is voltage-fragile, but because the resulting heat threatens tRFC stability.
+*   **Reasoning:** Micron E-die actually tolerates high voltage well (extreme overclockers routinely push 1.45V+ to tighten tCL). The real constraint is thermal: excess voltage increases DRAM temperature, which directly destabilizes temperature-sensitive timings like tRFC. On dual-rank modules, heat accumulates faster, so 1.35–1.38V is a practical ceiling for sustained daily use — not because E-die is voltage-fragile, but because the resulting heat threatens tRFC stability. See [[DDR4 OC Guide#Voltage Scaling|DDR4 OC Guide: Voltage Scaling]] and [[DDR4 OC Guide#Maximum Recommended Daily Voltage|Maximum Recommended Daily Voltage]].
 
 ### SoC Voltage (VDDCR_SOC)
 *   **Recommended Setting:** **1.10V**
-*   **Reasoning:** The SoC voltage powers the memory controller and Infinity Fabric. 1.10V is sufficient for 3733 MT/s on most 5800X3D samples. Increase to 1.15V only if the IMC fails training at tight timings — exceeding 1.20V yields no benefit and risks degradation.
+*   **Reasoning:** The SoC voltage powers the memory controller and Infinity Fabric. 1.10V is sufficient for 3733 MT/s on most 5800X3D samples. Increase to 1.15V only if the IMC fails training at tight timings — exceeding 1.20V yields no benefit and risks degradation. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] and [[Infinity Fabric Overclocking on Zen2_3#Relevant CPU Voltages|Infinity Fabric: Relevant CPU Voltages]].
 
 ### CLDO VDDP / VDDG CCD / VDDG IOD (Infinity Fabric Sub-Voltages)
 *   **Recommended Settings:** **Auto** (reference values below for manual tuning)
     *   CLDO VDDP: ~0.900V (stabilizes memory module signal strength)
     *   VDDG CCD: ~0.950V (core-to-I/O die data transfer)
     *   VDDG IOD: ~0.950V–1.050V (memory controller-to-I/O die transfer)
-*   **Reasoning:** These sub-voltages drive the Infinity Fabric and memory controller signaling. On most ASUS B550 boards, Auto derives them from SoC voltage (VDDG ≈ SoC/2 + offset) and works fine for 1866 MHz FCLK. Manual tuning is only needed if pushing FCLK beyond 1900 MHz or diagnosing elusive WHEA errors. Note: VDDG must not exceed SoC voltage minus ~50mV, or the IMC becomes unstable.
+*   **Reasoning:** These sub-voltages drive the Infinity Fabric and memory controller signaling. On most ASUS B550 boards, Auto derives them from SoC voltage (VDDG ≈ SoC/2 + offset) and works fine for 1866 MHz FCLK. Manual tuning is only needed if pushing FCLK beyond 1900 MHz or diagnosing elusive WHEA errors. Note: VDDG must not exceed SoC voltage minus ~50mV, or the IMC becomes unstable. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] (CLDO_VDDG / VDDP) and [[Infinity Fabric Overclocking on Zen2_3#Relevant CPU Voltages|Infinity Fabric: Relevant CPU Voltages]].
 
 ---
 
@@ -44,7 +111,7 @@
 
 #### FCLK (Infinity Fabric Frequency)
 *   **Recommended Setting:** **1866 MHz**
-*   **Reasoning:** At 3733 MT/s, MEMCLK = 1866 MHz. The 1:1 mode requires FCLK = MEMCLK = 1866 MHz. This is the sweet spot for Verdeille (5800X3D) — pushing beyond 3800 MT/s forces a 2:1 FCLK divider that increases latency by ~10ns, negating all timing gains.
+*   **Reasoning:** At 3733 MT/s, MEMCLK = 1866 MHz. The 1:1 mode requires FCLK = MEMCLK = 1866 MHz. This is the sweet spot for Verdeille (5800X3D) — pushing beyond 3800 MT/s forces a 2:1 FCLK divider that increases latency by ~10ns, negating all timing gains. See [[Infinity Fabric Overclocking on Zen2_3#Setting Realistic Expectations|Infinity Fabric: Setting Realistic Expectations]] and [[Infinity Fabric Overclocking on Zen2_3#Step-by-Step FCLK Overclocking Guide|Step-by-Step FCLK Overclocking Guide]].
 
 #### UCLK (Memory Controller Frequency)
 *   **Recommended Setting:** **UCLK = MEMCLK (1:1)**
@@ -52,17 +119,17 @@
 
 #### ProcODT (Processor On-Die Termination)
 *   **Recommended Setting:** **48Ω** (Range: 43.6–60Ω)
-*   **Reasoning:** ProcODT controls signal reflection at the CPU socket. Dual-rank Micron E-die at 3733 MT/s typically requires 48Ω for stable training. Too low (40Ω) causes POST failures; too high (60Ω+) can cause signal ringing and subtle instability. This is often the single most impactful non-timing parameter for 5800X3D dual-rank stability.
+*   **Reasoning:** ProcODT controls signal reflection at the CPU socket. Dual-rank Micron E-die at 3733 MT/s typically requires 48Ω for stable training. Too low (40Ω) causes POST failures; too high (60Ω+) can cause signal ringing and subtle instability. This is often the single most impactful non-timing parameter for 5800X3D dual-rank stability. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] (/r/overclocking ProcODT notes) and [[Infinity Fabric Overclocking on Zen2_3#Relevant BIOS settings|Infinity Fabric: Relevant BIOS settings]].
 
 ### Structural & Non-Timing Prerequisites
 
 #### Gear Down Mode (GDM)
 *   **Recommended Setting:** **Enabled.**
-*   **Reasoning:** Acts as a hybrid "1.5T" command rate. The structural keystone that prevents dual-rank memory from instantly crashing at 3733 MT/s.
+*   **Reasoning:** Acts as a hybrid "1.5T" command rate. The structural keystone that prevents dual-rank memory from instantly crashing at 3733 MT/s. See [[DDR4 OC Guide#Finding a Baseline|DDR4 OC Guide: Finding a Baseline]] (Gear Down Mode / Command Rate).
 
 #### Power Down Enable (PDE)
 *   **Recommended Setting:** **Disabled.**
-*   **Reasoning:** Prevents memory from entering micro-sleep states. Instantly shaves 2-3ns off system latency by eliminating the electrical "wake-up" penalty.
+*   **Reasoning:** Prevents memory from entering micro-sleep states. Instantly shaves 2-3ns off system latency by eliminating the electrical "wake-up" penalty. See [[DDR4 OC Guide#Finding a Baseline|DDR4 OC Guide: Finding a Baseline]] (DRAM PowerDown Mode).
 
 #### Command Rate (Cmd2T)
 *   **Recommended Setting:** **1T.**
@@ -79,14 +146,14 @@ The core pillars of memory operation. They establish the baseline latency floor.
 *   **Values:** Loose: 18 | Stable: 16 | Tight: 16
 *   **Latency/Throughput Value:** Foundational latency. Dictates the absolute floor for system responsiveness.
 *   **Interaction:** Sets the mathematical baseline for `tRAS` and `tCWL`. When Gear Down Mode is enabled, all primary timings must be integers (not half-cycle values), but they do not need to be exclusively even.
-*   **Voltage/Temp Interaction:** Negligible thermal impact. Scales poorly with voltage on Micron E-die.
+*   **Voltage/Temp Interaction:** Negligible thermal impact. Scales poorly with voltage on Micron E-die. See [[DDR4 OC Guide#Voltage Scaling|DDR4 OC Guide: Voltage Scaling]] (tCL voltage scaling) and [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 5 (tCL).
 
 ### tRCDRd (RAS to CAS Delay - Read)
 *   **Explanation:** Time required to activate a row and locate the specific data column for a read.
 *   **Values:** Loose: 20 | Stable: 19 | Tight: 19
 *   **Latency/Throughput Value:** The single most critical bottleneck for raw read latency.
 *   **Interaction:** Mathematically drives the minimum `tRAS` value.
-*   **Voltage/Temp Interaction:** Highly resistant to voltage scaling. E-die physically cannot execute reads at lower delays regardless of voltage, but tightening generates no extra heat.
+*   **Voltage/Temp Interaction:** Highly resistant to voltage scaling. E-die physically cannot execute reads at lower delays regardless of voltage, but tightening generates no extra heat. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 6 (tRCD).
 
 ### tRCDWr (RAS to CAS Delay - Write)
 *   **Explanation:** Time required to activate a row and locate the specific data column for a write.
@@ -107,7 +174,7 @@ The core pillars of memory operation. They establish the baseline latency floor.
 *   **Values:** Loose: 38 | Stable: 36 | Tight: 36
 *   **Latency/Throughput Value:** Bandwidth consistency. Squeezing too tight terminates operations prematurely, destroying throughput.
 *   **Interaction:** JEDEC defines the minimum as $tRAS_{min} \approx tRCDRd + tRP$. For 3733 MT/s with tRCDRd=19 and tRP=14, this yields $tRAS_{min} \approx 33$, so 36 provides a safe margin above the floor.
-*   **Voltage/Temp Interaction:** Negligible thermal generation.
+*   **Voltage/Temp Interaction:** Negligible thermal generation. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 7 (tRAS = tRCDRD + tRTP) and step 8 (tRC = tRP + tRAS).
 
 ---
 
@@ -120,7 +187,7 @@ The core pillars of memory operation. They establish the baseline latency floor.
 *   **Values:** Loose: Auto | Stable: 16 | Tight: 14
 *   **Latency/Throughput Value:** Dictates the baseline responsiveness for write operations.
 *   **Interaction:** For optimal stability on Ryzen, `tCWL` should be ≤ `tCL`. The guideline `tCWL = tCL − 2` is achievable on Micron E-die at 3733 MT/s with sufficient DRAM voltage (1.38V).
-*   **Voltage/Temp Interaction:** Negligible thermal impact.
+*   **Voltage/Temp Interaction:** Negligible thermal impact. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 3 (tCWL = tCL - 2 on AMD).
 
 ### Holy Trinity
 
@@ -138,7 +205,7 @@ Governs raw data volume and is the primary source of memory heat.
 *   **Values:** Loose: Auto | Stable: 6 | Tight: 4
 *   **Latency/Throughput Value:** Exponential throughput multiplier. Dictates internal bandwidth bottlenecks.
 *   **Interaction:** Works in tandem with `tRRDS` and `tFAW` to control total activation volume.
-*   **Voltage/Temp Interaction:** Extreme thermal generator. Squeezing this to 4 is the primary cause of heat-soaked bit-flips on dual-rank modules.
+*   **Voltage/Temp Interaction:** Extreme thermal generator. Squeezing this to 4 is the primary cause of heat-soaked bit-flips on dual-rank modules. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 1 (tRRDS tRRDL tFAW).
 
 #### tFAW (Four Activate Window)
 *   **Explanation:** The total rolling time window allowed for exactly four row activations.
@@ -163,7 +230,7 @@ Governs raw data volume and is the primary source of memory heat.
 *   **Values:** Loose: Auto | Stable: 16 | Tight: 12
 *   **Latency/Throughput Value:** Secondary latency reduction during mixed workloads.
 *   **Interaction:** JEDEC does not hard-link `tWR` and `tRTP`. However, for Ryzen IMC stability at 3733 MT/s dual-rank, maintaining $tWR \geq 2 \times tRTP$ is a recommended guideline — not an architectural constraint.
-*   **Voltage/Temp Interaction:** Minor thermal impact. A value of 16 is highly recommended for dual-rank stability at 3733 MT/s.
+*   **Voltage/Temp Interaction:** Minor thermal impact. A value of 16 is highly recommended for dual-rank stability at 3733 MT/s. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 1 (tWR tRTP; `tWR = 2 × tRTP` per Micron/JEDEC datasheet).
 
 #### tRTP (Read to Precharge)
 *   **Explanation:** Cooldown period after finishing a read operation before precharging the bank.
@@ -179,7 +246,7 @@ Governs raw data volume and is the primary source of memory heat.
 *   **Values:** Loose: Auto | Stable: 4 | Tight: 4
 *   **Latency/Throughput Value:** Smoothes out heavy, unpredictable I/O workloads.
 *   **Interaction:** Overrides and functionally replaces standard turnaround timings (`tWrRd`).
-*   **Voltage/Temp Interaction:** Minimal thermal generation.
+*   **Voltage/Temp Interaction:** Minimal thermal generation. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 3 (tWTRS tWTRL, tCWL).
 
 #### tWTRL (Write to Read Delay, Long)
 *   **Explanation:** Enforced pause when shifting from writing to reading within the same bank group.
@@ -197,7 +264,7 @@ Tuned independently after cycle times are verified thermally stable. **Tune last
 *   **Values:** Loose: 653 (~350ns) | Stable: 630 (~337ns) | Tight: 560 (~300ns)
 *   **Latency/Throughput Value:** Substantial reduction in overall system latency and inter-process stuttering.
 *   **Interaction:** Formula: $tRFC = \frac{\text{Target Time (ns)} \times \text{Memory Speed (MT/s)}}{2000}$. For 300ns at 3733 MT/s: $300 \times 3733 / 2000 \approx 560$.
-*   **Voltage/Temp Interaction:** **Hyper-sensitive to temperature.** Because heat accelerates electrical leakage, hot silicon requires longer refreshes. A tight value of 560 will immediately trigger a bit-flip if temperatures rise.
+*   **Voltage/Temp Interaction:** **Hyper-sensitive to temperature.** Because heat accelerates electrical leakage, hot silicon requires longer refreshes. A tight value of 560 will immediately trigger a bit-flip if temperatures rise. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 2 (tRFC, ns conversion formula) and [[DDR4 OC Guide#Temperatures and Its Effect on Stability|Temperatures and Its Effect on Stability]].
 
 #### tRFC2 (Refresh Cycle Time 2)
 *   **Explanation:** Secondary refresh interval profile, originally designed for high-temperature states.
@@ -228,7 +295,7 @@ Optimizes data pipeline efficiency within the same bank groups. **Tune first** �
 *   **Values:** Loose: Auto | Stable: 5 | Tight: 4
 *   **Latency/Throughput Value:** Measurable increase in raw read MB/s in synthetic benchmarks.
 *   **Interaction:** Best practice dictates keeping this perfectly synchronized with `tWRWRSCL`.
-*   **Voltage/Temp Interaction:** Minimal heat generation; stability relies almost entirely on the CPU's IMC quality.
+*   **Voltage/Temp Interaction:** Minimal heat generation; stability relies almost entirely on the CPU's IMC quality. See [[DDR4 OC Guide#Tightening Timings|Tightening Timings]] step 4 (tRDRDSCL tWRWRSCL).
 
 #### tWRWRSCL (Write to Write, Same Bank Group, Long)
 *   **Explanation:** Delay enforced between consecutive write commands executing within the same bank group.
@@ -391,7 +458,7 @@ After applying timings at each stage, stability must be verified in a specific o
 **Step 5: dmesg Monitoring (Continuous)**
 *   **Action:** After each test, check `journalctl -k --grep=mce` for machine check exceptions.
 *   **Pass Criteria:** No MCE events, no corrected/uncorrected error entries.
-*   **Catches:** Silent hardware errors that don't cause immediate crashes but indicate marginal stability.
+*   **Catches:** Silent hardware errors that don't cause immediate crashes but indicate marginal stability. See [[Infinity Fabric Overclocking on Zen2_3#Some thoughts on the notorious "WHEA-19s"|Infinity Fabric: WHEA-19s]].
 
 **Failure Recovery:**
 *   If Step 2 fails → loosen tRFC (+30), tRRDL (6→8), or increase DRAM V to 1.38V.
