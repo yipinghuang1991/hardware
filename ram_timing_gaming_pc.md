@@ -1,3 +1,8 @@
+## References
+
+- [DDR4 OC Guide](./reference/DDR4%20OC%20Guide.md) — integralfx/MemTestHelper — [source](https://github.com/integralfx/MemTestHelper/blob/oc-guide/DDR4%20OC%20Guide.md)
+- [Infinity Fabric Overclocking on Zen2/3](./reference/Infinity%20Fabric%20Overclocking%20on%20Zen2_3.md) — /u/RonLazer — [source](https://docs.google.com/document/d/1FsUuYtjztbqgOiR3uUCtzlTyzB2WRFUm-kXbboECj2s/edit?tab=t.0)
+
 ## Voltages
 
 | Group           | Variable     | Name                          | A / M  | Value | Comment                          |
