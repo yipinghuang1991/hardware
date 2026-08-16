@@ -1,3 +1,12 @@
+## Voltages
+
+| Group           | Variable     | Name                          | A / M  | Value | Comment |
+|:--------------- |:------------ |:----------------------------- |:------ | -----:|:------- |
+| Core Voltages   | DRAM Voltage | DRAM Module Voltage           | Manual | 1.38V |         |
+| Core Voltages   | SoC Voltage  | System on Chip Voltage        | Manual | 1.10V |         |
+| Fabric Voltages | CLDO VDDP    | Memory Module Signal Strength | Auto   |       |         |
+| Fabric Voltages | VDDG CCD     | Core-to-I/O Die Transfer      | Auto   |       |         |
+| Fabric Voltages | VDDG IOD     | MC-to-I/O Die Transfer        | Auto   |       |         |
 
 ## Hardware & Signal Configuration
 
@@ -31,34 +40,35 @@
 
 ## Secondary Timings
 
-| Group                         | Variable | Name                                  | A / M  | Value | Comment     |
-|:----------------------------- |:-------- |:------------------------------------- |:------ | -----:|:----------- |
-| Bank Cycle                    | tRC      | Bank Cycle Time (Row Cycle)           | Manual |    58 | 56 unstable |
-| Row Activation (Holy Trinity) | tRRDS    | Row Active to Row Active Delay, Short | Manual |     4 |             |
-| Row Activation (Holy Trinity) | tRRDL    | Row Active to Row Active Delay, Long  | Manual |     4 |             |
-| Row Activation (Holy Trinity) | tFAW     | Four Activate Window                  | Manual |    16 |             |
-| Write Latency & Recovery      | tWR      | Write Recovery Time                   | Manual |    12 |             |
-| Write Latency & Recovery      | tCWL     | CAS Write Latency                     | Manual |    14 |             |
-| Recovery Delays               | tRTP     | Read to Precharge                     | Manual |     6 |             |
-| Write-to-Read Turnaround      | tWTRS    | Write to Read Delay, Short            | Manual |     4 |             |
-| Write-to-Read Turnaround      | tWTRL    | Write to Read Delay, Long             | Manual |     8 |             |
-| Refresh Cycle Time            | tRFC     | Refresh Cycle Time                    | Manual |   560 |             |
-| Refresh Cycle Time            | tRFC2    | Refresh Cycle Time 2                  | Auto   |   486 |             |
-| Refresh Cycle Time            | tRFC4    | Refresh Cycle Time 4                  | Auto   |   299 |             |
+| Group                         | Variable | Name                                  | A / M  | Value | Comment      |
+|:----------------------------- |:-------- |:------------------------------------- |:------ | -----:|:------------ |
+| Bank Cycle Times              | tRC      | Row Cycle Time                        | Manual |    58 | 56 unstable  |
+| Row Activation (Holy Trinity) | tRRDS    | Row Active to Row Active Delay, Short | Manual |     4 |              |
+| Row Activation (Holy Trinity) | tRRDL    | Row Active to Row Active Delay, Long  | Manual |     4 |              |
+| Row Activation (Holy Trinity) | tFAW     | Four Activate Window                  | Manual |    16 |              |
+| Write Latency & Recovery      | tWR      | Write Recovery Time                   | Manual |    12 |              |
+| Write Latency & Recovery      | tCWL     | CAS Write Latency                     | Manual |    14 |              |
+| Write Latency & Recovery      | tRTP     | Read to Precharge                     | Manual |     6 |              |
+| Write-to-Read Turnaround      | tWTRS    | Write to Read Delay, Short            | Manual |     4 |              |
+| Write-to-Read Turnaround      | tWTRL    | Write to Read Delay, Long             | Manual |     8 |              |
+| Refresh Cycle Time            | tRFC     | Refresh Cycle Time                    | Manual |   560 |              |
+| Refresh Cycle Time            | tRFC2    | Refresh Cycle Time 2                  | Auto   |   486 | BIOS trained |
+| Refresh Cycle Time            | tRFC4    | Refresh Cycle Time 4                  | Auto   |   299 | BIOS trained |
 
 ## Tertiary Timings
 
-| Group            | Variable | Name                                            |  A / M | Value | Comment    |
-|:---------------- |:-------- |:----------------------------------------------- | ------:|:----- |:---------- |
-| Raw Turnaround   | tRdWr    | Read to Write Delay                             |   Auto | 18    |            |
-| Raw Turnaround   | tWrRd    | Write to Read Delay                             |   Auto | 7     |            |
-| Bank Group Sync  | tRDRDSCL | Read to Read Delay, Same Chip, Long             | Manual | 4     |            |
-| Bank Group Sync  | tWRWRSCL | Write to Write Delay, Same Chip, Long           | Manual | 4     |            |
-| Cross-Rank Read  | tRdRdSC  | Read to Read Delay, Same Chip                   |   Auto | 1     |            |
-| Cross-Rank Read  | tRdRdSD  | Read to Read Delay, Same DIMM, Different Rank   | Manual | 4     |            |
-| Cross-Rank Read  | tRdRdDD  | Read to Read Delay, Different DIMM              |   Auto | 4     |            |
-| Cross-Rank Write | tWrWrSC  | Write to Write Delay, Same Chip                 |   Auto | 1     |            |
-| Cross-Rank Write | tWrWrSD  | Write to Write Delay, Same DIMM, Different Rank | Manual | 6     | 5 unstable |
-| Cross-Rank Write | tWrWrDD  | Write to Write Delay, Different DIMM            | Manual | 4     |            |
-| Misc Signal      | tCKE     | Clock Enable                                    |   Auto | 1     |            |
-| Misc Signal      | tTRCPAGE | Target Row Cycle Page                           |   Auto | 0     |            |
+| Group                 | Variable | Name                                            |  A / M | Value | Comment    |
+|:--------------------- |:-------- |:----------------------------------------------- | ------:|:----- |:---------- |
+| Raw Turnaround        | tRdWr    | Read to Write Delay                             |   Auto | 18    |            |
+| Raw Turnaround        | tWrRd    | Write to Read Delay                             |   Auto | 7     |            |
+| Same Bank Group Delay | tRDRDSCL | Read to Read Delay, Same Chip, Long             | Manual | 4     |            |
+| Same Bank Group Delay | tWRWRSCL | Write to Write Delay, Same Chip, Long           | Manual | 4     |            |
+| Same Chip Delay       | tRdRdSC  | Read to Read Delay, Same Chip                   |   Auto | 1     |            |
+| Same Chip Delay       | tWrWrSC  | Write to Write Delay, Same Chip                 |   Auto | 1     |            |
+| Same DIMM Delay       | tRdRdSD  | Read to Read Delay, Same DIMM, Different Rank   | Manual | 4     |            |
+| Same DIMM Delay       | tWrWrSD  | Write to Write Delay, Same DIMM, Different Rank | Manual | 6     | 5 unstable |
+| Diff DIMM Delay       | tRdRdDD  | Read to Read Delay, Different DIMM              |   Auto | 4     |            |
+| Diff DIMM Delay       | tWrWrDD  | Write to Write Delay, Different DIMM            | Manual | 4     |            |
+| Misc Signal           | tCKE     | Clock Enable                                    |   Auto | 1     |            |
+| Misc Signal           | tTRCPAGE | Target Row Cycle Page                           |   Auto | 0     |            |
+

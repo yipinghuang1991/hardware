@@ -111,12 +111,12 @@ The core pillars of memory operation. They establish the baseline latency floor.
 
 ---
 
-### Phase 2: The Holy Trinity & Bank Cycle
+### Phase 2: Bank Cycle Times & The Holy Trinity
 Governs raw data volume and is the primary source of memory heat.
 
-**1. The Cycle Times**
+**1. Bank Cycle Times**
 
-**a. tRC (Bank Cycle Time)**
+**a. tRC (Row Cycle Time)**
 *   **Explanation:** Total time required for a memory bank to complete a full open-read-close sequence.
 *   **Values:** Loose: Auto | Stable: 60 | Tight: 56
 *   **Latency/Throughput Value:** Dictates the absolute maximum sustained bandwidth limit of the module.
