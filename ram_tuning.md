@@ -97,11 +97,11 @@
 *   **Reasoning:** The SoC voltage powers the memory controller and Infinity Fabric. 1.10V is sufficient for 3733 MT/s on most 5800X3D samples. Increase to 1.15V only if the IMC fails training at tight timings — exceeding 1.20V yields no benefit and risks degradation. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] and [[Infinity Fabric Overclocking on Zen2_3#Relevant CPU Voltages|Infinity Fabric: Relevant CPU Voltages]].
 
 ### CLDO VDDP / VDDG CCD / VDDG IOD (Infinity Fabric Sub-Voltages)
-*   **Recommended Settings:** **Auto** (reference values below for manual tuning)
-    *   CLDO VDDP: ~0.900V (stabilizes memory module signal strength)
-    *   VDDG CCD: ~0.950V (core-to-I/O die data transfer)
-    *   VDDG IOD: ~0.950V–1.050V (memory controller-to-I/O die transfer)
-*   **Reasoning:** These sub-voltages drive the Infinity Fabric and memory controller signaling. On most ASUS B550 boards, Auto derives them from SoC voltage (VDDG ≈ SoC/2 + offset) and works fine for 1866 MHz FCLK. Manual tuning is only needed if pushing FCLK beyond 1900 MHz or diagnosing elusive WHEA errors. Note: VDDG must not exceed SoC voltage minus ~50mV, or the IMC becomes unstable. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] (CLDO_VDDG / VDDP) and [[Infinity Fabric Overclocking on Zen2_3#Relevant CPU Voltages|Infinity Fabric: Relevant CPU Voltages]].
+*   **Recommended Settings:** **Manual** (verified stable values below)
+    *   CLDO VDDP: **0.90V** (stabilizes memory module signal strength)
+    *   VDDG CCD: **0.95V** (core-to-I/O die data transfer)
+    *   VDDG IOD: **0.95V** (memory controller-to-I/O die transfer)
+*   **Reasoning:** These sub-voltages drive the Infinity Fabric and memory controller signaling. Locking these verified values prevents the motherboard from auto-training to excessive or unstable voltages, ensuring FCLK 1866 MHz absolute stability. On most ASUS B550 boards, Auto derives them from SoC voltage (VDDG ≈ SoC/2 + offset) and works adequately, but manual lock provides tighter control. Note: VDDG must not exceed SoC voltage minus ~50mV, or the IMC becomes unstable. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] (CLDO_VDDG / VDDP) and [[Infinity Fabric Overclocking on Zen2_3#Relevant CPU Voltages|Infinity Fabric: Relevant CPU Voltages]].
 
 ---
 
@@ -118,8 +118,8 @@
 *   **Reasoning:** The UCLKDIVEN setting must be set so UCLK runs synchronous to MEMCLK. Any async mode introduces a latency penalty on every memory transaction.
 
 #### ProcODT (Processor On-Die Termination)
-*   **Recommended Setting:** **48Ω** (Range: 43.6–60Ω)
-*   **Reasoning:** ProcODT controls signal reflection at the CPU socket. Dual-rank Micron E-die at 3733 MT/s typically requires 48Ω for stable training. Too low (40Ω) causes POST failures; too high (60Ω+) can cause signal ringing and subtle instability. This is often the single most impactful non-timing parameter for 5800X3D dual-rank stability. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] (/r/overclocking ProcODT notes) and [[Infinity Fabric Overclocking on Zen2_3#Relevant BIOS settings|Infinity Fabric: Relevant BIOS settings]].
+*   **Recommended Setting:** **53.3Ω** (Range: 43.6–60Ω)
+*   **Reasoning:** ProcODT controls signal reflection at the CPU socket. Dual-rank Micron E-die at 3733 MT/s: 48Ω allows POST and basic stability, but under sustained dual-rank interleaving load (stressapptest), insufficient reflection absorption causes data line miscompares. 53.3Ω fully resolves this SI issue and is the verified stable value on this IMC. Too low (40Ω) causes POST failures; too high (60Ω+) can cause signal ringing and subtle instability. See [[DDR4 OC Guide#AMD IMC|DDR4 OC Guide: AMD IMC]] (/r/overclocking ProcODT notes) and [[Infinity Fabric Overclocking on Zen2_3#Relevant BIOS settings|Infinity Fabric: Relevant BIOS settings]].
 
 ### Structural & Non-Timing Prerequisites
 
@@ -310,14 +310,14 @@ Controls how rapidly the memory bus can swap between read and write states. Rela
 
 #### tRdWr (Read to Write Delay)
 *   **Explanation:** Raw turnaround timing required to swap the memory bus from a read state to a write state.
-*   **Values:** Loose: Auto (usually 18) | Stable: 18 | Tight: 16
+*   **Values:** Loose: Auto (usually 18) | Stable: 18 | Tight: 16 (16 stable on this IMC)
 *   **Latency/Throughput Value:** Reduces latency penalty when swapping operation directions.
 *   **Interaction:** Operates semi-independently of the WTR timings.
 *   **Voltage/Temp Interaction:** Negligible.
 
 #### tWrRd (Write to Read Delay)
 *   **Explanation:** Raw turnaround timing to swap the memory bus from a write state to a read state.
-*   **Values:** Loose: Auto | Stable: Auto (often trains to 7) | Tight: Auto
+*   **Values:** Loose: Auto | Stable: 6 | Tight: 6 (Auto trains to 7; 6 stable on this IMC)
 *   **Latency/Throughput Value:** Highly superseded by the tighter WTR constraints.
 *   **Interaction:** Heavily overridden by `tWTRS` and `tWTRL` on the Ryzen architecture.
 *   **Voltage/Temp Interaction:** Negligible.
@@ -428,7 +428,7 @@ These timings manage signal termination, drive strength, and miscellaneous signa
 
 **Staged Tuning Methodology:** Do not apply all 30+ timings at once. If the system fails, you cannot isolate which parameter caused it. Follow this staged approach:
 
-1.  **Stage 1 — FCLK & Primary:** Set frequency (3733 MT/s), FCLK (1866), UCLK (1:1), SoC voltage, ProcODT, and the primary 5-tuple only. Boot into OS and check `dmesg`/`journalctl` for WHEA errors. Run mprime Small FFTs for 30 minutes to confirm FCLK stability.
+1.  **Stage 1 — FCLK & Primary:** Set frequency (3733 MT/s), FCLK (1866), UCLK (1:1), SoC voltage, ProcODT (53.3Ω), and the primary 5-tuple only. Boot into OS and check `dmesg`/`journalctl` for WHEA errors. Run mprime Small FFTs for 30 minutes to confirm FCLK stability.
 2.  **Stage 2 — Secondaries & Tertiaries:** Once Stage 1 passes, apply secondary timings (tCWL, tRRDS/L, tFAW, tRC, tWR, tRTP, tWTRS/L, tRFC/tRFC2/tRFC4) and tertiary timings (SCLs, Raw Turnarounds, SC/SD/DD). Run mprime Large FFTs for 1 hour.
 3.  **Stage 3 — Aggressive Tightening:** Apply tight tRFC, tRRDL=4, and tight SCLs. Run the full validation protocol below.
 
