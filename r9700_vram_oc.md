@@ -30,6 +30,10 @@ cat /sys/class/drm/card1/device/ras/umc_err_count
 # 預期輸出: ue: 0 / ce: 0 / de: 0
 ```
 
+**amdgpu_top 對照**: TUI/GUI 的 "ECC Memory Error Count" 區塊讀同一個 UMC RAS block —
+`Corrected` = ce, `UnCorrected` = ue (de 不顯示)。盯 amdgpu_top = 盯 umc_err_count。
+`-d`/JSON dump 不含此欄 (JSON 只給 `ecc_memory: true/false` 表示支援與否)。
+
 2026-09-04 基線: **ue:0 ce:0 de:0**, event_state 全 0, 無壞頁。
 
 ## VRAM OC 穩定性 SOP — 三層偵測
