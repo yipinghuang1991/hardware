@@ -6,9 +6,9 @@
 
 ## TL;DR
 
-- yp-ai 自 2026-09-10 以來：**16 次「MC5 sync flood」致命重啟 + 2 次「BP_SYS_RST_L reset pin」重啟 + 7 次存活的記憶體域 deferred MCE**。
+- yp-ai 自 2026-09-10 以來：**17 次「MC5 sync flood」致命重啟（截至 10-06 11:19）+ 2 次「BP_SYS_RST_L reset pin」重啟 + 7 次存活的記憶體域 deferred MCE**。
 - 成因層級＝**平台硬體**（CPU/SoC fabric・時序/供電邊際）。軟體無法防止；日誌無法定位到元件，定案需換件測試。
-- 分布＝「風暴期」而非均勻：9/17–19（6 死）、9/30（8 死）、10/6（2 死＋1 pin）；其餘時間乾淨、可重載連跑數天。
+- 分布＝「風暴期」而非均勻：9/17–19（6 死）、9/30（8 死）、10/6（3 死＋1 pin，11:19 仍在發）；其餘時間乾淨、可重載連跑數天。
 - 已知排除：特定 RAM 套件 ✗、kernel 版本 ✗、特定推論引擎 ✗、PCIe/AER ✗、**本機超頻 ✗**（無調校；RAM 跑 JEDEC 2400）。
 
 ## 本機硬體（pc_rigs 對照）
@@ -22,10 +22,10 @@
 
 - `MC5_STATUS[-|UE|MiscV|AddrV|PCC|TCC|SyndV] 0xbea0000000000108`
 - `Syndrome 0x000000004d000000`、`Execution Unit Ext. Error Code: 0`、`cache level: RESV, tx: GEN, mem-tx: GEN`
-- CPU 編號每次不同（3/5/8/12/21/22…）→ 系統性、非單核
+- CPU 編號每次不同（3/5/7/8/12/21/22…）→ 系統性、非單核
 - 下次開機的 `Previous system reset reason [0x08000800]: an uncorrected error caused a data fabric sync flood event`
 - 機制：不可修正錯誤（UE）→ PCC（context corrupt）→ 平台 sync flood → 秒級重置（OS 來不及寫任何關機序列）
-- 位址欄：多數集中在 `0x01ffffff…` 區；一次變體 `0x00007f95…`（boot -17 的記錄）
+- 位址欄兩型：多數集中 `0x01ffffff…` 區；變體為使用者空間型 `0x00007f95…`（9/30 首發）與 `0x00007f31…`（10-06 11:19）
 
 ## 事件時間線
 
@@ -41,7 +41,9 @@
 - **10-06 04:35**：使用者手動 reboot（04:34:51 停 memtest 之後——時序正常）
 - **10-06 04:52 / 05:16**：flood #15–16（無前奏、瞬死；vLLM 雙卡高載中）
 - **10-06 09:04**：reset pin #2
-- **10-06 09:51 起**：current boot 乾淨（0 MCE、0 amdgpu ERROR、同級重載無復發）
+- **10-06 09:51–11:19**：乾淨期（0 MCE、0 amdgpu ERROR）
+- **10-06 11:19:15**：**flood #17**（CPU:7、Addr `0x7f31…`、無前奏；vLLM 生成中 + 多 session 同時跑；11:19:57 自動重開）
+- **10-06 11:19:57 起**：current boot；11:20:02 曾一筆 `clocksource: Watchdog remote CPU 11 read timed out`（boot 時、觀察中）
 
 ## 已排除（都驗證過）
 
@@ -50,7 +52,7 @@
 - **工作負載非特定**：llama.cpp（9 月）與 vLLM（10 月）時代都發生。
 - **PCIe/AER 無關**：死亡前 boot 內 0 筆 PCIe bus error / AER。
 - **本機超頻無關**：無調校紀錄、RAM JEDEC 2400。（hardware/ repo 調校文＝yp-gaming）
-- **時段無關**：9/17 傍晚、9/18 一早一晚、9/19 傍晚、9/30 凌晨、10/6 清晨——與「凌晨」無特別關聯；相關的是重載+機率。
+- **時段無關**：9/17 傍晚、9/18 一早一晚、9/19 傍晚、9/30 凌晨、10/6 清晨與中午——與「凌晨」無特別關聯；相關的是重載+機率。
 
 ## 現行加重因子（未定案）
 
