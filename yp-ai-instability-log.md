@@ -76,3 +76,41 @@ sudo ras-mc-ctl db --table-summary    # rasdaemon，10-06 起
 3. 供電：FSP 1200W SFX-L ATX3；若再現風暴→借測換電源。
 4. 記憶體：128G 全量 memtest（現只測過 64G）＋必要時 2-DIMM A/B。
 5. 不建議：主動負載複現（風險高、效益低）。
+
+## 社群案例彙整（2026-10-06 讀）
+
+三個來源、同一簽名（MC5/bank 5、`0xbea…0108`、SYND `4d000000`、Exec Unit Ext 0——與本機一字不差；跨 5900X/5800X3D/5950X/5800H/7600/5700G）：
+
+- **Reddit r/pop_os「Data Fabric Sync Flood Event」**（5900X + MSI X570 Tomahawk，約一年前）：
+  - 他的修復組合（自述之後沒再炸）：① BIOS 關 **Global C-state Control** ② **CPU NB/SoC Voltage** 模式改 **AMD Overclocking**（截圖讀值 1.108V，A-XMP 3600）③ **Curve Optimizer：Positive、Magnitude 10**（加壓裕度）。
+  - 留言：另一條線是 **WD Black SN770 NVMe 韌體 bug**（更新固件修好；跨 Framework 案例）。
+- **gist eliottness（Zen 3/4 綜合整理，最完整）**：
+  - 7600 修復組合＝`processor.max_cstate=2 + nvme_core.default_ps_max_latency_us=0 + pcie_aspm=off + pcie_ports=native + amdgpu.ppfeaturemask=0xfff73fff` → 2 個月+未再發。
+  - 關鍵提醒：**要驗證 C6 真的關掉了**（`processor.max_cstate` 經常是 no-op，需 ZenStates-Linux / BIOS「Global C-state Control」「Power Supply Idle Control → Typical Current Idle」/ amd-disable-c6）。
+  - 但不是人人有效：lucperneel 全參數仍每 1–2 週一發（已開 kernel Bugzilla **221909**）；klightspeed（**5950X**）追出 6.18+/7.1+ 的 `amd_pstate` 會忽略 `max_cstate`，最後**定頻**（`amd_pstate=disable` + performance governor + 關 boost）→ 11 天穩；Tavisco（5700G）C6 已關仍炸 → 關 **Cool'n'Quiet** 後穩。
+- **Arch BBS #314983（5800X3D + RTX 4090）**：簽名位元級相同；遊戲負載觸發、偶爾開機 10 分鐘內。多變數環境（CO -30 降壓、nvidia 電源限制、mt7921e WiFi、GPU「fell off the bus」）；seth 診斷方向＝WiFi 晶片污染總線 / GPU 掉總線；**未解決**，串後段轉查 nvidia P-state/延遲問題。
+
+### 對 yp-ai 的映射（2026-10-06 現況）
+
+- C-states：只暴露 **POLL/C1/C2**（無 C3）；硬體 C6 需另驗（ZenStates）；未下任何 cstate 參數。
+- 頻率管理：**amd-pstate-epp + performance governor + boost ON**（與 klightspeed 的穩定組合不同）。
+- ASPM：全部 link 已 **Disabled/不支援** → `pcie_aspm=off` 對我們是 no-op。
+- NVMe = Samsung PM983、WiFi = Intel AX200 → 這兩個「裝置 bug」線與我們無關。
+- ppfeaturemask：現值 `0xFFF7FFFF`（`/etc/modprobe.d/99-amdgpu-overdrive.conf`）；gist 值 `0xFFF73FFF`（多清 bits14–15）。
+- 我們的樣本多在**重載中**觸發（非純 idle）——與社群「idle 深睡」故事不完全吻合，仍可能是電源態轉換邊際。
+
+### 候選試驗（未執行；等決策）
+
+1. BIOS：**Global C-state Control 關** / Cool'n'Quiet 關（先驗 C6 是否還在作用）。
+2. BIOS：**SoC 電壓裕度**（AMD Overclocking 模式 / 固定 ~1.10V）。
+3. BIOS：**CO Positive +10**（僅在 1+2 不足時）。
+4. cmdline 測試：`idle=nomwait`、`usbcore.autosuspend=-1`；`ppfeaturemask` 試 `0xFFF73FFF`。
+5. 最後手段：定頻（`amd_pstate=disable` + 關 boost）——對算力機代價大。
+6. memtest86+ 裸機全量（含 <4G/低區 pattern）。
+
+### 來源連結
+
+- https://www.reddit.com/r/pop_os/comments/1o4bleo/data_fabric_sync_flood_event/
+- https://gist.github.com/eliottness/ded6bce8163689dc426732d0670c7a28
+- https://bbs.archlinux.org/viewtopic.php?id=314983
+- kernel Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=221909
